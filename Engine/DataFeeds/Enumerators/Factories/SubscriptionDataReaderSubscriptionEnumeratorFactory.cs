@@ -74,8 +74,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds.Enumerators.Factories
         /// <returns>An enumerator reading the subscription request</returns>
         public IEnumerator<BaseData> CreateEnumerator(SubscriptionRequest request, IDataProvider dataProvider)
         {
-            var mapFileResolver = request.Configuration.SecurityType == SecurityType.Equity ||
-                                  request.Configuration.SecurityType == SecurityType.Option
+            var mapFileResolver = request.Configuration.TickerShouldBeMapped()
                                     ? _mapFileProvider.Get(request.Security.Symbol.ID.Market)
                                     : MapFileResolver.Empty;
 
@@ -91,6 +90,7 @@ namespace QuantConnect.Lean.Engine.DataFeeds.Enumerators.Factories
 
             dataReader.InvalidConfigurationDetected += (sender, args) => { _resultHandler.ErrorMessage(args.Message); };
             dataReader.NumericalPrecisionLimited += (sender, args) => { _resultHandler.DebugMessage(args.Message); };
+            dataReader.StartDateLimited += (sender, args) => { _resultHandler.DebugMessage(args.Message); };
             dataReader.DownloadFailed += (sender, args) => { _resultHandler.ErrorMessage(args.Message, args.StackTrace); };
             dataReader.ReaderErrorDetected += (sender, args) => { _resultHandler.RuntimeError(args.Message, args.StackTrace); };
 
@@ -100,7 +100,8 @@ namespace QuantConnect.Lean.Engine.DataFeeds.Enumerators.Factories
                 _factorFileProvider,
                 dataReader,
                 mapFileResolver,
-                _includeAuxiliaryData);
+                _includeAuxiliaryData,
+                request.StartTimeLocal);
 
             return result;
         }

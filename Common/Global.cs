@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using QuantConnect.Securities;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect
 {
@@ -144,29 +145,17 @@ namespace QuantConnect
         /// </summary>
         public override string ToString()
         {
-            var value = string.Format("{0}: {1} @ {2}{3} - Market: {2}{4}", Symbol.Value, Quantity, CurrencySymbol, AveragePrice, MarketPrice);
+            var value = Invariant($"{Symbol.Value}: {Quantity} @ ") +
+                        Invariant($"{CurrencySymbol}{AveragePrice} - ") +
+                        Invariant($"Market: {CurrencySymbol}{MarketPrice}");
 
             if (ConversionRate != 1m)
             {
-                value += string.Format(" - Conversion: {0}", ConversionRate);
+                value += Invariant($" - Conversion: {ConversionRate}");
             }
 
             return value;
         }
-    }
-
-    /// <summary>
-    /// Processing runmode of the backtest.
-    /// </summary>
-    /// <obsolete>The runmode enum is now obsolete and all tasks are run in series mode. This was done to ensure algorithms have memory of the day before.</obsolete>
-    public enum RunMode
-    {
-        /// Automatically detect the runmode of the algorithm: series for minute data, parallel for second-tick
-        Automatic,
-        /// Series runmode for the algorithm
-        Series,
-        /// Parallel runmode for the algorithm
-        Parallel
     }
 
     /// <summary>
@@ -579,7 +568,12 @@ namespace QuantConnect
         /// <summary>
         /// The subscription's data comes from a rest call that is polled and returns a single line/data point of information
         /// </summary>
-        Rest
+        Rest,
+
+        /// <summary>
+        /// The subscription's data is streamed
+        /// </summary>
+        Streaming
     }
 
     /// <summary>

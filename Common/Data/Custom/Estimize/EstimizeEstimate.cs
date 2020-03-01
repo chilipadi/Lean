@@ -14,11 +14,10 @@
 */
 
 using Newtonsoft.Json;
-using QuantConnect.Data.UniverseSelection;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using NodaTime;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Data.Custom.Estimize
 {
@@ -52,7 +51,7 @@ namespace QuantConnect.Data.Custom.Estimize
         public int FiscalQuarter { get; set; }
 
         /// <summary>
-        /// The time that the estimate was created (UTC) 
+        /// The time that the estimate was created (UTC)
         /// </summary>
         [JsonProperty(PropertyName = "created_at")]
         public DateTime CreatedAt { get; set; }
@@ -74,7 +73,7 @@ namespace QuantConnect.Data.Custom.Estimize
         public override decimal Value => Eps ?? 0m;
 
         /// <summary>
-        /// The estimated revenue for the company in the specified fiscal quarter 
+        /// The estimated revenue for the company in the specified fiscal quarter
         /// </summary>
         [JsonProperty(PropertyName = "revenue")]
         public decimal? Revenue { get; set; }
@@ -99,6 +98,33 @@ namespace QuantConnect.Data.Custom.Estimize
         public bool Flagged { get; set; }
 
         /// <summary>
+        /// Required for successful Json.NET deserialization
+        /// </summary>
+        public EstimizeEstimate()
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of EstimizeEstimate from a CSV line
+        /// </summary>
+        /// <param name="csvLine">CSV line</param>
+        public EstimizeEstimate(string csvLine)
+        {
+            // CreatedAt[0], Id[1], AnalystId[2], UserName[3], FiscalYear[4], FiscalQuarter[5], Eps[6], Revenue[7], Flagged[8]"
+            var csv = csvLine.Split(',');
+
+            CreatedAt = Parse.DateTimeExact(csv[0], "yyyyMMdd HH:mm:ss");
+            Id = csv[1];
+            AnalystId = csv[2];
+            UserName = csv[3];
+            FiscalYear = Parse.Int(csv[4]);
+            FiscalQuarter = Parse.Int(csv[5]);
+            Eps = csv[6].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            Revenue = csv[7].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            Flagged = csv[8].ConvertInvariant<bool>();
+        }
+
+        /// <summary>
         /// Return the Subscription Data Source gained from the URL
         /// </summary>
         /// <param name="config">Configuration object</param>
@@ -107,45 +133,32 @@ namespace QuantConnect.Data.Custom.Estimize
         /// <returns>Subscription Data Source.</returns>
         public override SubscriptionDataSource GetSource(SubscriptionDataConfig config, DateTime date, bool isLiveMode)
         {
-            if (!config.Symbol.Value.EndsWith(".E"))
-            {
-                throw new ArgumentException($"EstimizeEstimate.GetSource(): Invalid symbol {config.Symbol}");
-            }
-
-            var symbol = config.Symbol.Value;
-            symbol = symbol.Substring(0, symbol.Length - 2);
-
             var source = Path.Combine(
                 Globals.DataFolder,
                 "alternative",
                 "estimize",
                 "estimate",
-                $"{symbol.ToLower()}.zip"
+                $"{config.Symbol.Value.ToLowerInvariant()}.csv"
             );
-            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Collection);
+            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Csv);
         }
 
         /// <summary>
         /// Reader converts each line of the data source into BaseData objects.
         /// </summary>
         /// <param name="config">Subscription data config setup object</param>
-        /// <param name="content">Content of the source document</param>
+        /// <param name="line">Content of the source document</param>
         /// <param name="date">Date of the requested data</param>
         /// <param name="isLiveMode">true if we're in live mode, false for backtesting mode</param>
         /// <returns>
-        /// Collection of Estimize Estimate objects
+        /// Estimize Estimate object
         /// </returns>
-        public override BaseData Reader(SubscriptionDataConfig config, string content, DateTime date, bool isLiveMode)
+        public override BaseData Reader(SubscriptionDataConfig config, string line, DateTime date, bool isLiveMode)
         {
-            var objectList = JsonConvert.DeserializeObject<List<EstimizeEstimate>>(content);
-
-            foreach (var obj in objectList)
+            return new EstimizeEstimate(line)
             {
-                obj.Symbol = config.Symbol;
-                obj.Time = new DateTime(obj.FiscalYear, obj.FiscalQuarter * 3 - 2, 1);
-            }
-
-            return new BaseDataCollection(date, config.Symbol, objectList.OrderBy(x => x.EndTime));
+                Symbol = config.Symbol
+            };
         }
 
         /// <summary>
@@ -153,7 +166,29 @@ namespace QuantConnect.Data.Custom.Estimize
         /// </summary>
         public override string ToString()
         {
-            return $"{Ticker}(Q{FiscalQuarter} {FiscalYear}) :: EPS: {Eps} Revenue: {Revenue} on {EndTime:yyyyMMdd} by {UserName}({AnalystId})";
+            return Invariant($"{Ticker}(Q{FiscalQuarter} {FiscalYear}) :: ") +
+                   Invariant($"EPS: {Eps} ") +
+                   Invariant($"Revenue: {Revenue} on ") +
+                   Invariant($"{EndTime:yyyyMMdd} by ") +
+                   Invariant($"{UserName}({AnalystId})");
+        }
+
+        /// <summary>
+        /// Indicates if there is support for mapping
+        /// </summary>
+        /// <returns>True indicates mapping should be used</returns>
+        public override bool RequiresMapping()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Specifies the data time zone for this data type. This is useful for custom data types
+        /// </summary>
+        /// <returns>The <see cref="DateTimeZone"/> of this data type</returns>
+        public override DateTimeZone DataTimeZone()
+        {
+            return TimeZones.Utc;
         }
     }
 }

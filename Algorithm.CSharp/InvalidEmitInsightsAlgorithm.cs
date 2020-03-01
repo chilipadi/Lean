@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -84,18 +84,25 @@ namespace QuantConnect.Algorithm.CSharp
             {"Drawdown", "2.200%"},
             {"Expectancy", "0"},
             {"Net Profit", "1.663%"},
-            {"Sharpe Ratio", "4.41"},
+            {"Sharpe Ratio", "4.824"},
+            {"Probabilistic Sharpe Ratio", "66.954%"},
             {"Loss Rate", "0%"},
             {"Win Rate", "0%"},
             {"Profit-Loss Ratio", "0"},
-            {"Alpha", "0.007"},
-            {"Beta", "76.118"},
-            {"Annual Standard Deviation", "0.192"},
-            {"Annual Variance", "0.037"},
-            {"Information Ratio", "4.354"},
-            {"Tracking Error", "0.192"},
-            {"Treynor Ratio", "0.011"},
+            {"Alpha", "0"},
+            {"Beta", "0.996"},
+            {"Annual Standard Deviation", "0.219"},
+            {"Annual Variance", "0.048"},
+            {"Information Ratio", "-4.864"},
+            {"Tracking Error", "0.001"},
+            {"Treynor Ratio", "1.061"},
             {"Total Fees", "$3.26"},
+            {"Fitness Score", "0.248"},
+            {"Kelly Criterion Estimate", "0"},
+            {"Kelly Criterion Probability Value", "0"},
+            {"Sortino Ratio", "79228162514264337593543950335"},
+            {"Return Over Maximum Drawdown", "94.3"},
+            {"Portfolio Turnover", "0.248"},
             {"Total Insights Generated", "1"},
             {"Total Insights Closed", "0"},
             {"Total Insights Analysis Completed", "0"},
@@ -108,7 +115,8 @@ namespace QuantConnect.Algorithm.CSharp
             {"Mean Population Direction", "0%"},
             {"Mean Population Magnitude", "0%"},
             {"Rolling Averaged Population Direction", "0%"},
-            {"Rolling Averaged Population Magnitude", "0%"}
+            {"Rolling Averaged Population Magnitude", "0%"},
+            {"OrderListHash", "-148851580"}
         };
     }
 }

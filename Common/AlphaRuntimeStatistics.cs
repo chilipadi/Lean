@@ -33,6 +33,8 @@ namespace QuantConnect
         private decimal _overrideEstimatedMonthlyAlphaValue;
         private readonly IAccountCurrencyProvider _accountCurrencyProvider;
         private decimal _fitnessScore;
+        private decimal _kellyCriterionEstimate;
+        private decimal _kellyCriterionProbabilityValue;
         private decimal _portfolioTurnover;
         private decimal _returnOverMaxDrawdown;
         private decimal _sortinoRatio;
@@ -82,6 +84,40 @@ namespace QuantConnect
         /// The total accumulated estimated value of trading all insights
         /// </summary>
         public decimal TotalAccumulatedEstimatedAlphaValue { get; set; }
+
+        /// <summary>
+        /// Score of the strategy's insights predictive power
+        /// </summary>
+        /// <remarks>See https://www.quantconnect.com/forum/discussion/6194/insight-scoring-metric/p1.
+        /// For performance we only truncate when the value is gotten</remarks>
+        public decimal KellyCriterionEstimate
+        {
+            get
+            {
+                return _kellyCriterionEstimate.TruncateTo3DecimalPlaces();
+            }
+            set
+            {
+                _kellyCriterionEstimate = value;
+            }
+        }
+
+        /// <summary>
+        /// The p-value or probability value of the <see cref="KellyCriterionEstimate"/>
+        /// </summary>
+        /// <remarks>See https://www.quantconnect.com/forum/discussion/6194/insight-scoring-metric/p1.
+        /// For performance we only truncate when the value is gotten</remarks>
+        public decimal KellyCriterionProbabilityValue
+        {
+            get
+            {
+                return _kellyCriterionProbabilityValue.TruncateTo3DecimalPlaces();
+            }
+            set
+            {
+                _kellyCriterionProbabilityValue = value;
+            }
+        }
 
         /// <summary>
         /// Score of the strategy's performance, and suitability for the Alpha Stream Market
@@ -197,23 +233,25 @@ namespace QuantConnect
 
             return new Dictionary<string, string>
             {
-                {"Fitness Score", $"{FitnessScore}"},
-                {"Sortino Ratio", $"{SortinoRatio}"},
-                {"Return Over Maximum Drawdown", $"{ReturnOverMaxDrawdown}"},
-                {"Portfolio Turnover", $"{PortfolioTurnover}"},
-                {"Total Insights Generated", $"{TotalInsightsGenerated}"},
-                {"Total Insights Closed", $"{TotalInsightsClosed}"},
-                {"Total Insights Analysis Completed", $"{TotalInsightsAnalysisCompleted}"},
-                {"Long Insight Count", $"{LongCount}"},
-                {"Short Insight Count", $"{ShortCount}"},
-                {"Long/Short Ratio", $"{Math.Round(100*LongShortRatio, 2)}%"},
-                {"Estimated Monthly Alpha Value", $"{accountCurrencySymbol}{EstimatedMonthlyAlphaValue.SmartRounding()}"},
-                {"Total Accumulated Estimated Alpha Value", $"{accountCurrencySymbol}{TotalAccumulatedEstimatedAlphaValue.SmartRounding()}"},
-                {"Mean Population Estimated Insight Value", $"{accountCurrencySymbol}{MeanPopulationEstimatedInsightValue.SmartRounding()}"},
-                {"Mean Population Direction", $"{Math.Round(100 * MeanPopulationScore.Direction, 4)}%"},
-                {"Mean Population Magnitude", $"{Math.Round(100 * MeanPopulationScore.Magnitude, 4)}%"},
-                {"Rolling Averaged Population Direction", $"{Math.Round(100 * RollingAveragedPopulationScore.Direction, 4)}%"},
-                {"Rolling Averaged Population Magnitude", $"{Math.Round(100 * RollingAveragedPopulationScore.Magnitude, 4)}%"},
+                {"Fitness Score", $"{Invariant(FitnessScore)}"},
+                {"Kelly Criterion Estimate", $"{Invariant(KellyCriterionEstimate)}"},
+                {"Kelly Criterion Probability Value", $"{Invariant(KellyCriterionProbabilityValue)}"},
+                {"Sortino Ratio", $"{Invariant(SortinoRatio)}"},
+                {"Return Over Maximum Drawdown", $"{Invariant(ReturnOverMaxDrawdown)}"},
+                {"Portfolio Turnover", $"{Invariant(PortfolioTurnover)}"},
+                {"Total Insights Generated", $"{Invariant(TotalInsightsGenerated)}"},
+                {"Total Insights Closed", $"{Invariant(TotalInsightsClosed)}"},
+                {"Total Insights Analysis Completed", $"{Invariant(TotalInsightsAnalysisCompleted)}"},
+                {"Long Insight Count", $"{Invariant(LongCount)}"},
+                {"Short Insight Count", $"{Invariant(ShortCount)}"},
+                {"Long/Short Ratio", $"{Invariant(Math.Round(100*LongShortRatio, 2))}%"},
+                {"Estimated Monthly Alpha Value", $"{accountCurrencySymbol}{Invariant(EstimatedMonthlyAlphaValue.SmartRounding())}"},
+                {"Total Accumulated Estimated Alpha Value", $"{accountCurrencySymbol}{Invariant(TotalAccumulatedEstimatedAlphaValue.SmartRounding())}"},
+                {"Mean Population Estimated Insight Value", $"{accountCurrencySymbol}{Invariant(MeanPopulationEstimatedInsightValue.SmartRounding())}"},
+                {"Mean Population Direction", $"{Invariant(Math.Round(100 * MeanPopulationScore.Direction, 4))}%"},
+                {"Mean Population Magnitude", $"{Invariant(Math.Round(100 * MeanPopulationScore.Magnitude, 4))}%"},
+                {"Rolling Averaged Population Direction", $"{Invariant(Math.Round(100 * RollingAveragedPopulationScore.Direction, 4))}%"},
+                {"Rolling Averaged Population Magnitude", $"{Invariant(Math.Round(100 * RollingAveragedPopulationScore.Magnitude, 4))}%"},
             };
         }
 
@@ -233,6 +271,11 @@ namespace QuantConnect
         public void SetStartDate(DateTime algorithmStartDate)
         {
             _startDate = algorithmStartDate;
+        }
+
+        private static string Invariant(IConvertible obj)
+        {
+            return obj.ToStringInvariant();
         }
     }
 }

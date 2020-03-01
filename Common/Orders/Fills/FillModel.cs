@@ -34,7 +34,9 @@ namespace QuantConnect.Orders.Fills
         protected FillModelParameters Parameters { get; set; }
 
         /// <summary>
-        /// This is required due to a limitation in PythonNet to resolved overriden methods
+        /// This is required due to a limitation in PythonNet to resolved overriden methods.
+        /// When Python calls a C# method that calls a method that's overriden in python it won't
+        /// run the python implementation unless the call is performed through python too.
         /// </summary>
         protected FillModelPythonWrapper PythonWrapper;
 
@@ -536,7 +538,7 @@ namespace QuantConnect.Orders.Fills
         /// <summary>
         /// Determines if the exchange is open using the current time of the asset
         /// </summary>
-        private static bool IsExchangeOpen(Security asset, bool isExtendedMarketHours)
+        protected static bool IsExchangeOpen(Security asset, bool isExtendedMarketHours)
         {
             if (!asset.Exchange.DateTimeIsOpen(asset.LocalTime))
             {

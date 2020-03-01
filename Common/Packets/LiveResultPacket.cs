@@ -98,7 +98,7 @@ namespace QuantConnect.Packets
             }
             catch (Exception err)
             {
-                Log.Trace("LiveResultPacket(): Error converting json: " + err);
+                Log.Trace($"LiveResultPacket(): Error converting json: {err}");
             }
         }
 
@@ -136,17 +136,20 @@ namespace QuantConnect.Packets
         /// <summary>
         /// Holdings dictionary of algorithm holdings information
         /// </summary>
-        public IDictionary<string, Holding> Holdings = new Dictionary<string, Holding>();
+        [JsonProperty(PropertyName = "Holdings", NullValueHandling = NullValueHandling.Ignore)]
+        public IDictionary<string, Holding> Holdings;
 
         /// <summary>
         /// Cashbook for the algorithm's live results.
         /// </summary>
+        [JsonProperty(PropertyName = "Cash", NullValueHandling = NullValueHandling.Ignore)]
         public CashBook Cash;
 
         /// <summary>
         /// Server status information, including CPU/RAM usage, ect...
         /// </summary>
-        public IDictionary<string, string> ServerStatistics = new Dictionary<string, string>();
+        [JsonProperty(PropertyName = "ServerStatistics", NullValueHandling = NullValueHandling.Ignore)]
+        public IDictionary<string, string> ServerStatistics;
 
         /// <summary>
         /// Default Constructor
@@ -157,17 +160,17 @@ namespace QuantConnect.Packets
         /// <summary>
         /// Constructor for the result class for dictionary objects
         /// </summary>
-        public LiveResult(IDictionary<string, Chart> charts, IDictionary<int, Order> orders, IDictionary<DateTime, decimal> profitLoss, IDictionary<string, Holding> holdings, CashBook cashbook, IDictionary<string, string> statistics, IDictionary<string, string> runtime, IDictionary<string, string> serverStatistics = null)
+        public LiveResult(LiveResultParameters parameters)
         {
-            Charts = charts;
-            Orders = orders;
-            ProfitLoss = profitLoss;
-            Statistics = statistics;
-            Holdings = holdings;
-            Cash = cashbook;
-            RuntimeStatistics = runtime;
-            ServerStatistics = serverStatistics ?? OS.GetServerStatistics();
+            Charts = parameters.Charts;
+            Orders = parameters.Orders;
+            ProfitLoss = parameters.ProfitLoss;
+            Statistics = parameters.Statistics;
+            Holdings = parameters.Holdings;
+            Cash = parameters.CashBook;
+            RuntimeStatistics = parameters.RuntimeStatistics;
+            ServerStatistics = parameters.ServerStatistics;
+            AlphaRuntimeStatistics = parameters.AlphaRuntimeStatistics;
         }
     }
-
 } // End of Namespace:

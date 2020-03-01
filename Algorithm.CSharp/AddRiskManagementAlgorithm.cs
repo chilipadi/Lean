@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -71,18 +71,25 @@ namespace QuantConnect.Algorithm.CSharp
             {"Drawdown", "2.200%"},
             {"Expectancy", "0"},
             {"Net Profit", "1.752%"},
-            {"Sharpe Ratio", "4.52"},
+            {"Sharpe Ratio", "4.948"},
+            {"Probabilistic Sharpe Ratio", "67.707%"},
             {"Loss Rate", "0%"},
             {"Win Rate", "100%"},
             {"Profit-Loss Ratio", "0"},
-            {"Alpha", "0.007"},
-            {"Beta", "80.237"},
-            {"Annual Standard Deviation", "0.197"},
-            {"Annual Variance", "0.039"},
-            {"Information Ratio", "4.466"},
-            {"Tracking Error", "0.197"},
-            {"Treynor Ratio", "0.011"},
+            {"Alpha", "0.028"},
+            {"Beta", "1.023"},
+            {"Annual Standard Deviation", "0.225"},
+            {"Annual Variance", "0.051"},
+            {"Information Ratio", "8.21"},
+            {"Tracking Error", "0.006"},
+            {"Treynor Ratio", "1.089"},
             {"Total Fees", "$9.77"},
+            {"Fitness Score", "0.747"},
+            {"Kelly Criterion Estimate", "39.573"},
+            {"Kelly Criterion Probability Value", "0.226"},
+            {"Sortino Ratio", "79228162514264337593543950335"},
+            {"Return Over Maximum Drawdown", "108.728"},
+            {"Portfolio Turnover", "0.747"},
             {"Total Insights Generated", "100"},
             {"Total Insights Closed", "99"},
             {"Total Insights Analysis Completed", "99"},
@@ -95,7 +102,8 @@ namespace QuantConnect.Algorithm.CSharp
             {"Mean Population Direction", "54.5455%"},
             {"Mean Population Magnitude", "54.5455%"},
             {"Rolling Averaged Population Direction", "59.8056%"},
-            {"Rolling Averaged Population Magnitude", "59.8056%"}
+            {"Rolling Averaged Population Magnitude", "59.8056%"},
+            {"OrderListHash", "1162594724"}
         };
     }
 }

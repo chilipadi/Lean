@@ -1,11 +1,11 @@
 ﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,7 +27,7 @@ using QuantConnect.Logging;
 namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
 {
     using Processors = Dictionary<Symbol, List<List<AlgoSeekFuturesProcessor>>>;
-    
+
     /// <summary>
     /// Process a directory of algoseek futures files into separate resolutions.
     /// </summary>
@@ -39,6 +39,7 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
         private readonly string _destination;
         private readonly List<Resolution> _resolutions;
         private readonly DateTime _referenceDate;
+        private readonly HashSet<string> _symbolFilter;
 
         /// <summary>
         /// Create a new instance of the AlgoSeekFutures Converter. Parse a single input directory into an output.
@@ -48,13 +49,15 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
         /// <param name="remote">Remote directory of the .bz algoseek files</param>
         /// <param name="source">Source directory of the .csv algoseek files</param>
         /// <param name="destination">Destination directory of the processed future files</param>
-        public AlgoSeekFuturesConverter(List<Resolution> resolutions, DateTime referenceDate, string remote, string source, string destination)
+        /// <param name="symbolFilter">Collection of underlying ticker to process.</param>
+        public AlgoSeekFuturesConverter(List<Resolution> resolutions, DateTime referenceDate, string remote, string source, string destination, HashSet<string> symbolFilter = null)
         {
             _source = new DirectoryInfo(source);
             _remote = new DirectoryInfo(remote);
             _referenceDate = referenceDate;
             _destination = destination;
             _resolutions = resolutions;
+            _symbolFilter = symbolFilter;
         }
 
         /// <summary>
@@ -130,10 +133,10 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
                         }
                     }
 
-                    // setting up local processors 
+                    // setting up local processors
                     var processors = new Processors();
 
-                    var reader = new AlgoSeekFuturesReader(csvFile, symbolMultipliers);
+                    var reader = new AlgoSeekFuturesReader(csvFile, symbolMultipliers, _symbolFilter);
                     if (start == DateTime.MinValue)
                     {
                         start = DateTime.Now;
@@ -203,8 +206,8 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
         {
             var files = new List<FileInfo>();
 
-            var command = OS.IsLinux ? "ls" : "dir";
-            var arguments = OS.IsWindows ? "/b /a-d" : string.Empty;
+            var command = OS.IsLinux ? "ls" : "cmd.exe";
+            var arguments = OS.IsWindows ? "/c dir /b /a-d" : string.Empty;
 
             var processStartInfo = new ProcessStartInfo(command, arguments)
             {
@@ -256,7 +259,7 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
                     // skipping header
                     .Skip(1)
                     .ToDictionary(line => line[columnUnderlying],
-                                  line => System.Convert.ToDecimal(line[columnMultipleFactor]));
+                                  line => line[columnMultipleFactor].ConvertInvariant<decimal>());
         }
 
         private void Flush(Processors processors, DateTime time, bool final)
@@ -278,7 +281,7 @@ namespace QuantConnect.ToolBox.AlgoSeekFuturesConverter
 
             var destination = Path.Combine(_destination, "future");
             Directory.CreateDirectory(destination);
-            var dateMask = date.ToString(DateFormat.EightCharacter);
+            var dateMask = date.ToStringInvariant(DateFormat.EightCharacter);
 
             var files =
                 Directory.EnumerateFiles(destination, dateMask + "*.csv", SearchOption.AllDirectories)

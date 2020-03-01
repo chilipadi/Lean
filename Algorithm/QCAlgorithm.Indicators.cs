@@ -20,6 +20,7 @@ using QuantConnect.Indicators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Algorithm
 {
@@ -339,7 +340,7 @@ namespace QuantConnect.Algorithm
         /// <returns>The CommodityChannelIndex indicator for the requested symbol over the specified period</returns>
         public CommodityChannelIndex CCI(Symbol symbol, int period, MovingAverageType movingAverageType = MovingAverageType.Simple, Resolution? resolution = null, Func<IBaseData, IBaseDataBar> selector = null)
         {
-            var name = CreateIndicatorName(symbol, $"CCI({period})" + period, resolution);
+            var name = CreateIndicatorName(symbol, $"CCI({period})", resolution);
             var commodityChannelIndex = new CommodityChannelIndex(name, period, movingAverageType);
             RegisterIndicator(symbol, commodityChannelIndex, resolution, selector);
 
@@ -421,7 +422,7 @@ namespace QuantConnect.Algorithm
         /// <returns>The DoubleExponentialMovingAverage indicator for the requested symbol over the specified period</returns>
         public DoubleExponentialMovingAverage DEMA(Symbol symbol, int period, Resolution? resolution = null, Func<IBaseData, decimal> selector = null)
         {
-            var name = CreateIndicatorName(symbol, $"DEMA({period})" + period, resolution);
+            var name = CreateIndicatorName(symbol, $"DEMA({period})", resolution);
             var doubleExponentialMovingAverage = new DoubleExponentialMovingAverage(name, period);
             RegisterIndicator(symbol, doubleExponentialMovingAverage, resolution, selector);
 
@@ -523,7 +524,7 @@ namespace QuantConnect.Algorithm
         /// <returns>A new FilteredIdentity indicator for the specified symbol and selector</returns>
         public FilteredIdentity FilteredIdentity(Symbol symbol, TimeSpan resolution, Func<IBaseData, IBaseDataBar> selector = null, Func<IBaseData, bool> filter = null, string fieldName = null)
         {
-            var name = $"{symbol}({fieldName ?? "close"}_{resolution})";
+            var name = Invariant($"{symbol}({fieldName ?? "close"}_{resolution})");
             var filteredIdentity = new FilteredIdentity(name, filter);
             RegisterIndicator<IBaseData>(symbol, filteredIdentity, ResolveConsolidator(symbol, resolution), selector);
             return filteredIdentity;
@@ -688,7 +689,7 @@ namespace QuantConnect.Algorithm
         /// <returns>A new Identity indicator for the specified symbol and selector</returns>
         public Identity Identity(Symbol symbol, TimeSpan resolution, Func<IBaseData, decimal> selector = null, string fieldName = null)
         {
-            var name = $"{symbol}({fieldName ?? "close"},{resolution})";
+            var name = Invariant($"{symbol}({fieldName ?? "close"},{resolution})");
             var identity = new Identity(name);
             RegisterIndicator(symbol, identity, ResolveConsolidator(symbol, resolution), selector);
             return identity;
@@ -1667,6 +1668,10 @@ namespace QuantConnect.Algorithm
         /// <param name="type">The indicator type, for example, 'SMA(5)'</param>
         /// <param name="resolution">The resolution requested</param>
         /// <returns>A unique for the given parameters</returns>
+        public string CreateIndicatorName(Symbol symbol, FormattableString type, Resolution? resolution)
+        {
+            return CreateIndicatorName(symbol, Invariant(type), resolution);
+        }
         public string CreateIndicatorName(Symbol symbol, string type, Resolution? resolution)
         {
             if (!resolution.HasValue)
@@ -1704,7 +1709,7 @@ namespace QuantConnect.Algorithm
                     throw new ArgumentOutOfRangeException(nameof(resolution), resolution, "resolution parameter is out of range.");
             }
 
-            return $"{type}({symbol}{res})".Replace(")(",",");
+            return Invariant($"{type}({symbol}{res})").Replace(")(",",");
         }
 
         /// <summary>
@@ -1744,7 +1749,7 @@ namespace QuantConnect.Algorithm
             catch (InvalidOperationException)
             {
                 // this will happen if we did not find the subscription, let's give the user a decent error message
-                throw new Exception("Please register to receive data for symbol '" + symbol.ToString() + "' using the AddSecurity() function.");
+                throw new Exception($"Please register to receive data for symbol \'{symbol}\' using the AddSecurity() function.");
             }
             return subscription;
         }
@@ -1861,9 +1866,8 @@ namespace QuantConnect.Algorithm
             var type = typeof(T);
             if (!type.IsAssignableFrom(consolidator.OutputType))
             {
-                throw new ArgumentException(string.Format("Type mismatch found between consolidator and indicator for symbol: {0}." +
-                                                          "Consolidator outputs type {1} but indicator expects input type {2}",
-                    symbol, consolidator.OutputType.Name, type.Name)
+                throw new ArgumentException($"Type mismatch found between consolidator and indicator for symbol: {symbol}." +
+                    $"Consolidator outputs type {consolidator.OutputType.Name} but indicator expects input type {type.Name}"
                 );
             }
 
@@ -1963,7 +1967,7 @@ namespace QuantConnect.Algorithm
                 indicator.Update(selector(bar));
             };
 
-            // Push the historical data through a consolidator 
+            // Push the historical data through a consolidator
             var consolidator = GetIndicatorWarmUpConsolidator(symbol, period, onDataConsolidated);
             history.PushThrough(bar => consolidator.Update(bar));
 
@@ -2041,9 +2045,9 @@ namespace QuantConnect.Algorithm
             // data we won't be able to do anything good, we'll call it second, but it would really just be minute!
             if (timeSpan < subscription.Resolution.ToTimeSpan())
             {
-                throw new ArgumentException(string.Format("Unable to create {0} {1} consolidator because {0} is registered for {2} data. " +
-                                                          "Consolidators require higher resolution data to produce lower resolution data.",
-                    symbol, resolution.Value, subscription.Resolution)
+                throw new ArgumentException(Invariant($"Unable to create {symbol} {resolution.Value} consolidator because {symbol} ") +
+                    Invariant($"is registered for {subscription.Resolution} data. Consolidators require higher resolution data to ") +
+                    "produce lower resolution data."
                 );
             }
 
@@ -2070,9 +2074,8 @@ namespace QuantConnect.Algorithm
             // data we won't be able to do anything good, we'll call it second, but it would really just be minute!
             if (timeSpan.Value < subscription.Resolution.ToTimeSpan())
             {
-                throw new ArgumentException(string.Format("Unable to create {0} consolidator because {0} is registered for {1} data. " +
-                                                          "Consolidators require higher resolution data to produce lower resolution data.",
-                    symbol, subscription.Resolution)
+                throw new ArgumentException($"Unable to create {symbol} consolidator because {symbol} is registered for " +
+                    Invariant($"{subscription.Resolution.ToStringInvariant()} data. Consolidators require higher resolution data to produce lower resolution data.")
                 );
             }
 
@@ -2257,24 +2260,24 @@ namespace QuantConnect.Algorithm
         /// Registers the <paramref name="handler"/> to receive consolidated data for the specified symbol
         /// </summary>
         /// <param name="symbol">The symbol who's data is to be consolidated</param>
-        /// <param name="calendarType">The consolidation calendar type</param>
+        /// <param name="calendar">The consolidation calendar</param>
         /// <param name="handler">Data handler receives new consolidated data when generated</param>
         /// <returns>A new consolidator matching the requested parameters with the handler already registered</returns>
-        public IDataConsolidator Consolidate(Symbol symbol, Func<DateTime, CalendarInfo> calendarType, Action<QuoteBar> handler)
+        public IDataConsolidator Consolidate(Symbol symbol, Func<DateTime, CalendarInfo> calendar, Action<QuoteBar> handler)
         {
-            return Consolidate(symbol, calendarType, TickType.Quote, handler);
+            return Consolidate(symbol, calendar, TickType.Quote, handler);
         }
 
         /// <summary>
         /// Registers the <paramref name="handler"/> to receive consolidated data for the specified symbol
         /// </summary>
         /// <param name="symbol">The symbol who's data is to be consolidated</param>
-        /// <param name="calendarType">The consolidation calendar type</param>
+        /// <param name="calendar">The consolidation calendar</param>
         /// <param name="handler">Data handler receives new consolidated data when generated</param>
         /// <returns>A new consolidator matching the requested parameters with the handler already registered</returns>
-        public IDataConsolidator Consolidate(Symbol symbol, Func<DateTime, CalendarInfo> calendarType, Action<TradeBar> handler)
+        public IDataConsolidator Consolidate(Symbol symbol, Func<DateTime, CalendarInfo> calendar, Action<TradeBar> handler)
         {
-            return Consolidate(symbol, calendarType, TickType.Trade, handler);
+            return Consolidate(symbol, calendar, TickType.Trade, handler);
         }
 
         /// <summary>
@@ -2282,13 +2285,13 @@ namespace QuantConnect.Algorithm
         /// The handler and tick type must match.
         /// </summary>
         /// <param name="symbol">The symbol who's data is to be consolidated</param>
-        /// <param name="calendarType">The consolidation calendar type</param>
+        /// <param name="calendar">The consolidation calendar</param>
         /// <param name="handler">Data handler receives new consolidated data when generated</param>
         /// <returns>A new consolidator matching the requested parameters with the handler already registered</returns>
-        public IDataConsolidator Consolidate<T>(Symbol symbol, Func<DateTime, CalendarInfo> calendarType, Action<T> handler)
+        public IDataConsolidator Consolidate<T>(Symbol symbol, Func<DateTime, CalendarInfo> calendar, Action<T> handler)
             where T : class, IBaseData
         {
-            return Consolidate(symbol, calendarType, null, handler);
+            return Consolidate(symbol, calendar, null, handler);
         }
 
         /// <summary>
@@ -2296,18 +2299,18 @@ namespace QuantConnect.Algorithm
         /// The handler and tick type must match.
         /// </summary>
         /// <param name="symbol">The symbol who's data is to be consolidated</param>
-        /// <param name="calendarType">The consolidation calendar type</param>
+        /// <param name="calendar">The consolidation calendar</param>
         /// <param name="tickType">The tick type of subscription used as data source for consolidator. Specify null to use first subscription found.</param>
         /// <param name="handler">Data handler receives new consolidated data when generated</param>
         /// <returns>A new consolidator matching the requested parameters with the handler already registered</returns>
-        private IDataConsolidator Consolidate<T>(Symbol symbol, Func<DateTime, CalendarInfo> calendarType, TickType? tickType, Action<T> handler)
+        private IDataConsolidator Consolidate<T>(Symbol symbol, Func<DateTime, CalendarInfo> calendar, TickType? tickType, Action<T> handler)
             where T : class, IBaseData
         {
             // resolve consolidator input subscription
             var subscription = GetSubscription(symbol, tickType);
 
             // create requested consolidator
-            var consolidator = CreateConsolidator(calendarType, subscription.Type, subscription.TickType);
+            var consolidator = CreateConsolidator(calendar, subscription.Type, subscription.TickType);
 
             if (!typeof(T).IsAssignableFrom(consolidator.OutputType))
             {
@@ -2325,27 +2328,27 @@ namespace QuantConnect.Algorithm
 
             // register user-defined handler to receive consolidated data events
             consolidator.DataConsolidated += (sender, consolidated) => handler((T)consolidated);
-            
+
             // register the consolidator for automatic updates via SubscriptionManager
             SubscriptionManager.AddConsolidator(symbol, consolidator);
 
             return consolidator;
         }
 
-        private IDataConsolidator CreateConsolidator(Func<DateTime, CalendarInfo> calendarType, Type consolidatorInputType, TickType tickType)
+        private IDataConsolidator CreateConsolidator(Func<DateTime, CalendarInfo> calendar, Type consolidatorInputType, TickType tickType)
         {
             // if our type can be used as a trade bar, then let's just make one of those
             // we use IsAssignableFrom instead of IsSubclassOf so that we can account for types that are able to be cast to TradeBar
             if (typeof(TradeBar).IsAssignableFrom(consolidatorInputType))
             {
-                return new TradeBarConsolidator(calendarType);
+                return new TradeBarConsolidator(calendar);
             }
 
             // if our type can be used as a quote bar, then let's just make one of those
             // we use IsAssignableFrom instead of IsSubclassOf so that we can account for types that are able to be cast to QuoteBar
             if (typeof(QuoteBar).IsAssignableFrom(consolidatorInputType))
             {
-                return new QuoteBarConsolidator(calendarType);
+                return new QuoteBarConsolidator(calendar);
             }
 
             // if our type can be used as a tick then we'll use a consolidator that keeps the TickType
@@ -2354,19 +2357,19 @@ namespace QuantConnect.Algorithm
             {
                 if (tickType == TickType.Quote)
                 {
-                    return new TickQuoteBarConsolidator(calendarType);
+                    return new TickQuoteBarConsolidator(calendar);
                 }
-                return new TickConsolidator(calendarType);
+                return new TickConsolidator(calendar);
             }
 
             // if our type can be used as a DynamicData then we'll use the DynamicDataConsolidator
             if (typeof(DynamicData).IsAssignableFrom(consolidatorInputType))
             {
-                return new DynamicDataConsolidator(calendarType);
+                return new DynamicDataConsolidator(calendar);
             }
 
             // no matter what we can always consolidate based on the time-value pair of BaseData
-            return new BaseDataConsolidator(calendarType);
+            return new BaseDataConsolidator(calendar);
         }
     }
 }

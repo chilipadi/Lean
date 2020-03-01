@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -165,17 +165,24 @@ namespace QuantConnect.Algorithm.CSharp
             {"Expectancy", "2.423"},
             {"Net Profit", "2.507%"},
             {"Sharpe Ratio", "6.553"},
+            {"Probabilistic Sharpe Ratio", "86.387%"},
             {"Loss Rate", "50%"},
             {"Win Rate", "50%"},
             {"Profit-Loss Ratio", "5.85"},
-            {"Alpha", "0.836"},
-            {"Beta", "-17.564"},
+            {"Alpha", "0.449"},
+            {"Beta", "0.13"},
             {"Annual Standard Deviation", "0.087"},
             {"Annual Variance", "0.008"},
-            {"Information Ratio", "6.375"},
-            {"Tracking Error", "0.087"},
-            {"Treynor Ratio", "-0.033"},
+            {"Information Ratio", "-2.401"},
+            {"Tracking Error", "0.153"},
+            {"Treynor Ratio", "4.402"},
             {"Total Fees", "$13.18"},
+            {"Fitness Score", "0.324"},
+            {"Kelly Criterion Estimate", "22.157"},
+            {"Kelly Criterion Probability Value", "0.28"},
+            {"Sortino Ratio", "13.601"},
+            {"Return Over Maximum Drawdown", "130.862"},
+            {"Portfolio Turnover", "0.326"},
             {"Total Insights Generated", "7"},
             {"Total Insights Closed", "6"},
             {"Total Insights Analysis Completed", "6"},
@@ -188,7 +195,8 @@ namespace QuantConnect.Algorithm.CSharp
             {"Mean Population Direction", "83.3333%"},
             {"Mean Population Magnitude", "0%"},
             {"Rolling Averaged Population Direction", "98.0198%"},
-            {"Rolling Averaged Population Magnitude", "0%"}
+            {"Rolling Averaged Population Magnitude", "0%"},
+            {"OrderListHash", "100255535"}
         };
     }
 }

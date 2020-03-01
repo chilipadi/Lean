@@ -38,7 +38,7 @@ namespace QuantConnect.Algorithm.CSharp
             // Set requested data resolution
             UniverseSettings.Resolution = Resolution.Daily;
 
-            SetStartDate(2014, 03, 24);
+            SetStartDate(2014, 03, 25);
             SetEndDate(2014, 04, 07);
             SetCash(100000);
 
@@ -82,38 +82,46 @@ namespace QuantConnect.Algorithm.CSharp
         /// </summary>
         public Dictionary<string, string> ExpectedStatistics => new Dictionary<string, string>
         {
-            {"Total Trades", "19"},
+            {"Total Trades", "18"},
             {"Average Win", "0.12%"},
-            {"Average Loss", "-0.03%"},
-            {"Compounding Annual Return", "-47.750%"},
-            {"Drawdown", "3.000%"},
-            {"Expectancy", "1.860"},
-            {"Net Profit", "-2.632%"},
-            {"Sharpe Ratio", "-6.155"},
-            {"Loss Rate", "43%"},
-            {"Win Rate", "57%"},
-            {"Profit-Loss Ratio", "4.01"},
-            {"Alpha", "-0.209"},
-            {"Beta", "-20.117"},
-            {"Annual Standard Deviation", "0.09"},
+            {"Average Loss", "-0.02%"},
+            {"Compounding Annual Return", "-45.029%"},
+            {"Drawdown", "2.600%"},
+            {"Expectancy", "1.463"},
+            {"Net Profit", "-2.269%"},
+            {"Sharpe Ratio", "-5.464"},
+            {"Probabilistic Sharpe Ratio", "1.911%"},
+            {"Loss Rate", "71%"},
+            {"Win Rate", "29%"},
+            {"Profit-Loss Ratio", "7.62"},
+            {"Alpha", "-0.487"},
+            {"Beta", "-0.038"},
+            {"Annual Standard Deviation", "0.087"},
             {"Annual Variance", "0.008"},
-            {"Information Ratio", "-6.337"},
-            {"Tracking Error", "0.09"},
-            {"Treynor Ratio", "0.028"},
-            {"Total Fees", "$26.42"},
-            {"Total Insights Generated", "33"},
-            {"Total Insights Closed", "30"},
-            {"Total Insights Analysis Completed", "30"},
-            {"Long Insight Count", "33"},
+            {"Information Ratio", "-1.834"},
+            {"Tracking Error", "0.138"},
+            {"Treynor Ratio", "12.452"},
+            {"Total Fees", "$25.46"},
+            {"Fitness Score", "0.004"},
+            {"Kelly Criterion Estimate", "-11.683"},
+            {"Kelly Criterion Probability Value", "0.792"},
+            {"Sortino Ratio", "-4.812"},
+            {"Return Over Maximum Drawdown", "-17.305"},
+            {"Portfolio Turnover", "0.101"},
+            {"Total Insights Generated", "24"},
+            {"Total Insights Closed", "22"},
+            {"Total Insights Analysis Completed", "22"},
+            {"Long Insight Count", "24"},
             {"Short Insight Count", "0"},
             {"Long/Short Ratio", "100%"},
-            {"Estimated Monthly Alpha Value", "$-10605760"},
-            {"Total Accumulated Estimated Alpha Value", "$-5361800"},
-            {"Mean Population Estimated Insight Value", "$-178726.7"},
-            {"Mean Population Direction", "36.6667%"},
+            {"Estimated Monthly Alpha Value", "$-1906811"},
+            {"Total Accumulated Estimated Alpha Value", "$-900438.4"},
+            {"Mean Population Estimated Insight Value", "$-40929.02"},
+            {"Mean Population Direction", "27.2727%"},
             {"Mean Population Magnitude", "0%"},
-            {"Rolling Averaged Population Direction", "56.482%"},
-            {"Rolling Averaged Population Magnitude", "0%"}
+            {"Rolling Averaged Population Direction", "57.4228%"},
+            {"Rolling Averaged Population Magnitude", "0%"},
+            {"OrderListHash", "1994322491"}
         };
     }
 }

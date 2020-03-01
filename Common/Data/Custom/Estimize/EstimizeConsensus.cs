@@ -14,11 +14,10 @@
 */
 
 using Newtonsoft.Json;
-using QuantConnect.Data.UniverseSelection;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using NodaTime;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Data.Custom.Estimize
 {
@@ -26,7 +25,7 @@ namespace QuantConnect.Data.Custom.Estimize
     /// Consensus of the specified release
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    public class EstimizeConsensus : BaseData 
+    public class EstimizeConsensus : BaseData
     {
         /// <summary>
         /// The unique identifier for the estimate
@@ -94,7 +93,7 @@ namespace QuantConnect.Data.Custom.Estimize
         public int? FiscalYear { get; set; }
 
         /// <summary>
-        /// The fiscal quarter for the release 
+        /// The fiscal quarter for the release
         /// </summary>
         [JsonProperty(PropertyName = "fiscal_quarter")]
         public int? FiscalQuarter { get; set; }
@@ -105,6 +104,36 @@ namespace QuantConnect.Data.Custom.Estimize
         public override DateTime EndTime => UpdatedAt;
 
         /// <summary>
+        /// Empty constructor required for successful Json.NET deserialization
+        /// </summary>
+        public EstimizeConsensus()
+        {
+        }
+
+        /// <summary>
+        /// Creates an instance from CSV lines
+        /// </summary>
+        /// <param name="csvLine">CSV file</param>
+        public EstimizeConsensus(string csvLine)
+        {
+            // UpdatedAt[0], Id[1], Source[2], Type[3], Mean[4], High[5], Low[6], StandardDeviation[7], FiscalYear[8], FiscalQuarter[9], Count[10]
+            var csv = csvLine.Split(',');
+
+            UpdatedAt = Parse.DateTimeExact(csv[0], "yyyyMMdd HH:mm:ss");
+            Time = UpdatedAt;
+            Id = csv[1];
+            Source = (Source)Enum.Parse(typeof(Source), csv[2]);
+            Type = csv[3].IfNotNullOrEmpty(s => (Type)Enum.Parse(typeof(Type), s));
+            Mean = csv[4].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            High = csv[5].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            Low = csv[6].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            StandardDeviation = csv[7].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            FiscalYear = csv[8].IfNotNullOrEmpty<int?>(s => Parse.Int(s));
+            FiscalQuarter = csv[9].IfNotNullOrEmpty<int?>(s => Parse.Int(s));
+            Count = csv[10].IfNotNullOrEmpty<int?>(s => Parse.Int(s));
+        }
+
+        /// <summary>
         /// Return the Subscription Data Source gained from the URL
         /// </summary>
         /// <param name="config">Configuration object</param>
@@ -113,45 +142,32 @@ namespace QuantConnect.Data.Custom.Estimize
         /// <returns>Subscription Data Source.</returns>
         public override SubscriptionDataSource GetSource(SubscriptionDataConfig config, DateTime date, bool isLiveMode)
         {
-            if (!config.Symbol.Value.EndsWith(".C"))
-            {
-                throw new ArgumentException($"EstimizeConsensus.GetSource(): Invalid symbol {config.Symbol}");
-            }
-
-            var symbol = config.Symbol.Value;
-            symbol = symbol.Substring(0, symbol.Length - 2);
-
             var source = Path.Combine(
                 Globals.DataFolder,
                 "alternative",
                 "estimize",
                 "consensus",
-                symbol.ToLower(),
-                $"{date:yyyyMMdd}.zip"
+                $"{config.Symbol.Value.ToLowerInvariant()}.csv"
             );
-            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Collection);
+            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Csv);
         }
 
         /// <summary>
         /// Reader converts each line of the data source into BaseData objects.
         /// </summary>
         /// <param name="config">Subscription data config setup object</param>
-        /// <param name="content">Content of the source document</param>
+        /// <param name="line">Content of the source document</param>
         /// <param name="date">Date of the requested data</param>
         /// <param name="isLiveMode">true if we're in live mode, false for backtesting mode</param>
         /// <returns>
-        /// Collection of USEnergyInformation objects
+        /// Estimize consensus object
         /// </returns>
-        public override BaseData Reader(SubscriptionDataConfig config, string content, DateTime date, bool isLiveMode)
+        public override BaseData Reader(SubscriptionDataConfig config, string line, DateTime date, bool isLiveMode)
         {
-            var objectList = JsonConvert.DeserializeObject<List<EstimizeConsensus>>(content);
-
-            foreach (var obj in objectList)
+            return new EstimizeConsensus(line)
             {
-                obj.Symbol = config.Symbol;
-            }
-
-            return new BaseDataCollection(date, config.Symbol, objectList.OrderBy(x => x.EndTime));
+                Symbol = config.Symbol
+            };
         }
 
         /// <summary>
@@ -159,7 +175,32 @@ namespace QuantConnect.Data.Custom.Estimize
         /// </summary>
         public override string ToString()
         {
-            return $"{Symbol}(Q{FiscalQuarter} {FiscalYear}) :: {Type} - Mean: {Mean} High: {High} Low: {Low} STD: {StandardDeviation} Count: {Count} on {EndTime:yyyyMMdd} by {Source}";
+            return Invariant($"{Symbol}(Q{FiscalQuarter} {FiscalYear}) :: {Type} - ") +
+                   Invariant($"Mean: {Mean} ") +
+                   Invariant($"High: {High} ") +
+                   Invariant($"Low: {Low} ") +
+                   Invariant($"STD: {StandardDeviation} ") +
+                   Invariant($"Count: {Count} on ") +
+                   Invariant($"{EndTime:yyyyMMdd} ") +
+                   Invariant($"by {Source}");
+        }
+
+        /// <summary>
+        /// Indicates if there is support for mapping
+        /// </summary>
+        /// <returns>True indicates mapping should be used</returns>
+        public override bool RequiresMapping()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Specifies the data time zone for this data type. This is useful for custom data types
+        /// </summary>
+        /// <returns>The <see cref="DateTimeZone"/> of this data type</returns>
+        public override DateTimeZone DataTimeZone()
+        {
+            return TimeZones.Utc;
         }
     }
 

@@ -46,7 +46,7 @@ namespace QuantConnect.Brokerages.Bitfinex
         private readonly RateGate _connectionRateLimiter = new RateGate(10, TimeSpan.FromMinutes(1));
         private readonly ConcurrentDictionary<Symbol, List<BitfinexWebSocketWrapper>> _subscriptionsBySymbol = new ConcurrentDictionary<Symbol, List<BitfinexWebSocketWrapper>>();
         private readonly ConcurrentDictionary<BitfinexWebSocketWrapper, List<BitfinexChannel>> _channelsByWebSocket = new ConcurrentDictionary<BitfinexWebSocketWrapper, List<BitfinexChannel>>();
-        private readonly ConcurrentDictionary<Symbol, OrderBook> _orderBooks = new ConcurrentDictionary<Symbol, OrderBook>();
+        private readonly ConcurrentDictionary<Symbol, DefaultOrderBook> _orderBooks = new ConcurrentDictionary<Symbol, DefaultOrderBook>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BitfinexSubscriptionManager"/> class.
@@ -325,7 +325,7 @@ namespace QuantConnect.Brokerages.Bitfinex
                 else if (token is JObject)
                 {
                     var raw = token.ToObject<Messages.BaseMessage>();
-                    switch (raw.Event.ToLower())
+                    switch (raw.Event.ToLowerInvariant())
                     {
                         case "subscribed":
                             OnSubscribe(webSocket, token.ToObject<Messages.ChannelSubscription>());
@@ -427,7 +427,7 @@ namespace QuantConnect.Brokerages.Bitfinex
                     }
                 }
 
-                switch (channel.Name.ToLower())
+                switch (channel.Name.ToLowerInvariant())
                 {
                     case "book":
                         ProcessOrderBookSnapshot(channel, entries);
@@ -450,10 +450,10 @@ namespace QuantConnect.Brokerages.Bitfinex
             {
                 var symbol = _symbolMapper.GetLeanSymbol(channel.Symbol);
 
-                OrderBook orderBook;
+                DefaultOrderBook orderBook;
                 if (!_orderBooks.TryGetValue(symbol, out orderBook))
                 {
-                    orderBook = new OrderBook(symbol);
+                    orderBook = new DefaultOrderBook(symbol);
                     _orderBooks[symbol] = orderBook;
                 }
                 else
@@ -525,7 +525,7 @@ namespace QuantConnect.Brokerages.Bitfinex
                     }
                 }
 
-                switch (channel.Name.ToLower())
+                switch (channel.Name.ToLowerInvariant())
                 {
                     case "book":
                         ProcessOrderBookUpdate(channel, entries);
@@ -550,7 +550,7 @@ namespace QuantConnect.Brokerages.Bitfinex
                 var orderBook = _orderBooks[symbol];
 
                 var price = decimal.Parse(entries[0], NumberStyles.Float, CultureInfo.InvariantCulture);
-                var count = int.Parse(entries[1]);
+                var count = Parse.Int(entries[1]);
                 var amount = decimal.Parse(entries[2], NumberStyles.Float, CultureInfo.InvariantCulture);
 
                 if (count == 0)

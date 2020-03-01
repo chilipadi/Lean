@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -81,18 +81,25 @@ namespace QuantConnect.Algorithm.CSharp
             {"Drawdown", "0.600%"},
             {"Expectancy", "-0.495"},
             {"Net Profit", "0.412%"},
-            {"Sharpe Ratio", "4.344"},
+            {"Sharpe Ratio", "4.752"},
+            {"Probabilistic Sharpe Ratio", "66.580%"},
             {"Loss Rate", "67%"},
             {"Win Rate", "33%"},
             {"Profit-Loss Ratio", "0.52"},
-            {"Alpha", "0.001"},
-            {"Beta", "18.742"},
-            {"Annual Standard Deviation", "0.048"},
-            {"Annual Variance", "0.002"},
-            {"Information Ratio", "4.118"},
-            {"Tracking Error", "0.048"},
-            {"Treynor Ratio", "0.011"},
+            {"Alpha", "-0.004"},
+            {"Beta", "0.249"},
+            {"Annual Standard Deviation", "0.055"},
+            {"Annual Variance", "0.003"},
+            {"Information Ratio", "-4.848"},
+            {"Tracking Error", "0.165"},
+            {"Treynor Ratio", "1.045"},
             {"Total Fees", "$6.00"},
+            {"Fitness Score", "0.063"},
+            {"Kelly Criterion Estimate", "39.573"},
+            {"Kelly Criterion Probability Value", "0.226"},
+            {"Sortino Ratio", "79228162514264337593543950335"},
+            {"Return Over Maximum Drawdown", "70.601"},
+            {"Portfolio Turnover", "0.063"},
             {"Total Insights Generated", "100"},
             {"Total Insights Closed", "99"},
             {"Total Insights Analysis Completed", "99"},
@@ -105,7 +112,8 @@ namespace QuantConnect.Algorithm.CSharp
             {"Mean Population Direction", "54.5455%"},
             {"Mean Population Magnitude", "54.5455%"},
             {"Rolling Averaged Population Direction", "59.8056%"},
-            {"Rolling Averaged Population Magnitude", "59.8056%"}
+            {"Rolling Averaged Population Magnitude", "59.8056%"},
+            {"OrderListHash", "1460599652"}
         };
     }
 }

@@ -14,11 +14,10 @@
 */
 
 using Newtonsoft.Json;
-using QuantConnect.Data.UniverseSelection;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using NodaTime;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Data.Custom.Estimize
 {
@@ -40,7 +39,7 @@ namespace QuantConnect.Data.Custom.Estimize
         public int FiscalYear { get; set; }
 
         /// <summary>
-        /// The fiscal quarter for the release 
+        /// The fiscal quarter for the release
         /// </summary>
         [JsonProperty(PropertyName = "fiscal_quarter")]
         public int FiscalQuarter { get; set; }
@@ -68,7 +67,7 @@ namespace QuantConnect.Data.Custom.Estimize
         public override decimal Value => Eps ?? 0m;
 
         /// <summary>
-        /// The revenue for the specified fiscal quarter 
+        /// The revenue for the specified fiscal quarter
         /// </summary>
         [JsonProperty(PropertyName = "revenue")]
         public decimal? Revenue { get; set; }
@@ -80,13 +79,13 @@ namespace QuantConnect.Data.Custom.Estimize
         public decimal? WallStreetEpsEstimate { get; set; }
 
         /// <summary>
-        /// The estimated revenue from Wall Street 
+        /// The estimated revenue from Wall Street
         /// </summary>
         [JsonProperty(PropertyName = "wallstreet_revenue_estimate")]
         public decimal? WallStreetRevenueEstimate { get; set; }
 
         /// <summary>
-        /// The mean EPS consensus by the Estimize community 
+        /// The mean EPS consensus by the Estimize community
         /// </summary>
         [JsonProperty(PropertyName = "consensus_eps_estimate")]
         public decimal? ConsensusEpsEstimate { get; set; }
@@ -110,6 +109,38 @@ namespace QuantConnect.Data.Custom.Estimize
         public decimal? ConsensusWeightedRevenueEstimate { get; set; }
 
         /// <summary>
+        /// Without a default constructor, Json.NET will call the
+        /// other constructor with `null` for the string parameter
+        /// </summary>
+        public EstimizeRelease()
+        {
+        }
+
+        /// <summary>
+        /// Creates EstimizeRelease instance from a line of CSV
+        /// </summary>
+        /// <param name="csvLine">CSV line</param>
+        public EstimizeRelease(string csvLine)
+        {
+            // ReleaseDate[0], Id[1], FiscalYear[2], FiscalQuarter[3], Eps[4], Revenue[5], ConsensusEpsEstimate[6], ConsensusRevenueEstimate[7], WallStreetEpsEstimate[8], WallStreetRevenueEstimate[9], ConsensusWeightedEpsEstimate[10], ConsensusWeightedRevenueEstimate[11]");
+            var csv = csvLine.Split(',');
+
+            ReleaseDate = Parse.DateTimeExact(csv[0].Trim(), "yyyyMMdd HH:mm:ss");
+            Time = ReleaseDate;
+            Id = csv[1];
+            FiscalYear = Parse.Int(csv[2]);
+            FiscalQuarter = Parse.Int(csv[3]);
+            Eps = csv[4].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            Revenue = csv[5].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            ConsensusEpsEstimate = csv[6].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            ConsensusRevenueEstimate = csv[7].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            WallStreetEpsEstimate = csv[8].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            WallStreetRevenueEstimate = csv[9].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            ConsensusWeightedEpsEstimate = csv[10].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+            ConsensusWeightedRevenueEstimate = csv[11].IfNotNullOrEmpty<decimal?>(s => Parse.Decimal(s));
+        }
+
+        /// <summary>
         /// Return the Subscription Data Source gained from the URL
         /// </summary>
         /// <param name="config">Configuration object</param>
@@ -118,45 +149,32 @@ namespace QuantConnect.Data.Custom.Estimize
         /// <returns>Subscription Data Source.</returns>
         public override SubscriptionDataSource GetSource(SubscriptionDataConfig config, DateTime date, bool isLiveMode)
         {
-            if (!config.Symbol.Value.EndsWith(".R"))
-            {
-                throw new ArgumentException($"EstimizeRelease.GetSource(): Invalid symbol {config.Symbol}");
-            }
-
-            var symbol = config.Symbol.Value;
-            symbol = symbol.Substring(0, symbol.Length - 2);
-
             var source = Path.Combine(
                 Globals.DataFolder,
                 "alternative",
                 "estimize",
                 "release",
-                $"{symbol.ToLower()}.zip"
+                $"{config.Symbol.Value.ToLowerInvariant()}.csv"
             );
-            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Collection);
+            return new SubscriptionDataSource(source, SubscriptionTransportMedium.LocalFile, FileFormat.Csv);
         }
 
         /// <summary>
         /// Reader converts each line of the data source into BaseData objects.
         /// </summary>
         /// <param name="config">Subscription data config setup object</param>
-        /// <param name="content">Content of the source document</param>
+        /// <param name="line">Content of the source document</param>
         /// <param name="date">Date of the requested data</param>
         /// <param name="isLiveMode">true if we're in live mode, false for backtesting mode</param>
         /// <returns>
-        /// Collection of USEnergyInformation objects
+        /// Estimize Release object
         /// </returns>
-        public override BaseData Reader(SubscriptionDataConfig config, string content, DateTime date, bool isLiveMode)
+        public override BaseData Reader(SubscriptionDataConfig config, string line, DateTime date, bool isLiveMode)
         {
-            var objectList = JsonConvert.DeserializeObject<List<EstimizeRelease>>(content);
-
-            foreach (var obj in objectList)
+            return new EstimizeRelease(line)
             {
-                obj.Symbol = config.Symbol;
-                obj.Time = new DateTime(obj.FiscalYear, obj.FiscalQuarter * 3 - 2, 1);
-            }
-
-            return new BaseDataCollection(date, config.Symbol, objectList.OrderBy(x => x.EndTime));
+                Symbol = config.Symbol
+            };
         }
 
         /// <summary>
@@ -164,7 +182,28 @@ namespace QuantConnect.Data.Custom.Estimize
         /// </summary>
         public override string ToString()
         {
-            return $"{Symbol}(Q{FiscalQuarter} {FiscalYear}) :: EPS: {Eps} Revenue: {Revenue} on {EndTime:yyyyMMdd}";
+            return Invariant($"{Symbol}(Q{FiscalQuarter} {FiscalYear}) :: ") +
+                   Invariant($"EPS: {Eps} ") +
+                   Invariant($"Revenue: {Revenue} on ") +
+                   Invariant($"{EndTime:yyyyMMdd}");
+        }
+
+        /// <summary>
+        /// Indicates if there is support for mapping
+        /// </summary>
+        /// <returns>True indicates mapping should be used</returns>
+        public override bool RequiresMapping()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Specifies the data time zone for this data type. This is useful for custom data types
+        /// </summary>
+        /// <returns>The <see cref="DateTimeZone"/> of this data type</returns>
+        public override DateTimeZone DataTimeZone()
+        {
+            return TimeZones.Utc;
         }
     }
 }

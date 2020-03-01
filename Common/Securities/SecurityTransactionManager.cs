@@ -20,6 +20,7 @@ using System.Threading;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Orders;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Securities
 {
@@ -185,7 +186,7 @@ namespace QuantConnect.Securities
         {
             if (_algorithm != null && _algorithm.IsWarmingUp)
             {
-                throw new Exception("This operation is not allowed in Initialize or during warm up: CancelOpenOrders. Please move this code to the OnWarmupFinished() method.");
+                throw new InvalidOperationException("This operation is not allowed in Initialize or during warm up: CancelOpenOrders. Please move this code to the OnWarmupFinished() method.");
             }
 
             var cancelledOrders = new List<OrderTicket>();
@@ -207,7 +208,7 @@ namespace QuantConnect.Securities
         {
             if (_algorithm != null && _algorithm.IsWarmingUp)
             {
-                throw new Exception("This operation is not allowed in Initialize or during warm up: CancelOpenOrders. Please move this code to the OnWarmupFinished() method.");
+                throw new InvalidOperationException("This operation is not allowed in Initialize or during warm up: CancelOpenOrders. Please move this code to the OnWarmupFinished() method.");
             }
 
             var cancelledOrders = new List<OrderTicket>();
@@ -281,13 +282,19 @@ namespace QuantConnect.Securities
             var orderTicket = GetOrderTicket(orderId);
             if (orderTicket == null)
             {
-                Log.Error("SecurityTransactionManager.WaitForOrder(): Unable to locate ticket for order: " + orderId);
+                Log.Error(Invariant(
+                    $"SecurityTransactionManager.WaitForOrder(): Unable to locate ticket for order: {orderId}"
+                ));
+
                 return false;
             }
 
             if (!orderTicket.OrderClosed.WaitOne(_marketOrderFillTimeout))
             {
-                Log.Error("SecurityTransactionManager.WaitForOrder(): Order did not fill within {0} seconds.", _marketOrderFillTimeout.TotalSeconds);
+                Log.Error(Invariant(
+                    $"SecurityTransactionManager.WaitForOrder(): Order did not fill within {_marketOrderFillTimeout.TotalSeconds} seconds."
+                ));
+
                 return false;
             }
 
@@ -301,7 +308,7 @@ namespace QuantConnect.Securities
         /// <returns>List of open orders.</returns>
         public List<Order> GetOpenOrders(Symbol symbol)
         {
-            return GetOpenOrders(x => x.Symbol == symbol).ToList();
+            return GetOpenOrders(x => x.Symbol == symbol);
         }
 
         /// <summary>
@@ -328,7 +335,7 @@ namespace QuantConnect.Securities
         /// Get the order by its id
         /// </summary>
         /// <param name="orderId">Order id to fetch</param>
-        /// <returns>The order with the specified id, or null if no match is found</returns>
+        /// <returns>A clone of the order with the specified id, or null if no match is found</returns>
         public Order GetOrderById(int orderId)
         {
             return _orderProcessor.GetOrderById(orderId);

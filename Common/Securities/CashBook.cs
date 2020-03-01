@@ -25,6 +25,7 @@ using QuantConnect.Data.UniverseSelection;
 using QuantConnect.Interfaces;
 using QuantConnect.Logging;
 using QuantConnect.Util;
+using static QuantConnect.StringExtensions;
 
 namespace QuantConnect.Securities
 {
@@ -151,12 +152,12 @@ namespace QuantConnect.Securities
 
             if (source.ConversionRate == 0)
             {
-                throw new Exception($"The conversion rate for {sourceCurrency} is not available.");
+                throw new ArgumentException($"The conversion rate for {sourceCurrency} is not available.");
             }
 
             if (destination.ConversionRate == 0)
             {
-                throw new Exception($"The conversion rate for {destinationCurrency} is not available.");
+                throw new ArgumentException($"The conversion rate for {destinationCurrency} is not available.");
             }
 
             var conversionRate = source.ConversionRate / destination.ConversionRate;
@@ -188,16 +189,16 @@ namespace QuantConnect.Securities
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine(string.Format("{0} {1,13}    {2,10} = {3}", "Symbol", "Quantity", "Conversion", "Value in " + AccountCurrency));
+            sb.AppendLine(Invariant($"Symbol {"Quantity",13}    {"Conversion",10} = Value in {AccountCurrency}"));
             foreach (var value in _currencies.Select(x => x.Value))
             {
                 sb.AppendLine(value.ToString());
             }
             sb.AppendLine("-------------------------------------------------");
-            sb.AppendLine(string.Format("CashBook Total Value:                {0}{1}",
-                Currencies.GetCurrencySymbol(AccountCurrency),
-                Math.Round(TotalValueInAccountCurrency, 2))
-                );
+            sb.AppendLine("CashBook Total Value:                " +
+                Invariant($"{Currencies.GetCurrencySymbol(AccountCurrency)}") +
+                Invariant($"{Math.Round(TotalValueInAccountCurrency, 2).ToStringInvariant()}")
+            );
 
             return sb.ToString();
         }
@@ -334,7 +335,7 @@ namespace QuantConnect.Securities
                 Cash cash;
                 if (!_currencies.TryGetValue(symbol, out cash))
                 {
-                    throw new Exception("This cash symbol (" + symbol + ") was not found in your cash book.");
+                    throw new KeyNotFoundException($"This cash symbol ({symbol}) was not found in your cash book.");
                 }
                 return cash;
             }
